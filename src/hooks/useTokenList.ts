@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, useEffect } from 'react'
 import { erc20Abi, type Address } from 'viem'
 import { useAccount, useReadContracts } from 'wagmi'
 import { BASE_TOKENS, CHAIN, USDC_ADDRESS } from '@/lib/hagane'
@@ -10,6 +10,7 @@ export interface WalletToken {
   balance: bigint
   allowance: bigint
   isCustom: boolean
+  logo?: string | null
 }
 
 const STORAGE_KEY = 'hagane.customTokens'
@@ -24,15 +25,14 @@ function loadCustom(): Address[] {
   }
 }
 
-/** Reads real symbol, decimals, balance and Permit2 allowance for each candidate token. */
 export function useTokenList(permit2: Address | undefined) {
   const { address: owner } = useAccount()
   const [custom, setCustom] = useState<Address[]>(loadCustom)
+  const [logos, setLogos] = useState<Record<string, string | null>>({})
 
   const candidates = useMemo(() => {
     const seen = new Set<string>()
     const out: { address: Address; isCustom: boolean }[] = []
-    // USDC is the gas token and the destination, so it is never listed (EURC and other tokens are).
     seen.add(USDC_ADDRESS.toLowerCase())
     for (const a of BASE_TOKENS) {
       if (!seen.has(a.toLowerCase())) {
@@ -66,6 +66,28 @@ export function useTokenList(permit2: Address | undefined) {
     query: { enabled, refetchInterval: 20_000 },
   })
 
+  // Nova lógica: buscar os logos na API do Explorer da Arc
+  useEffect(() => {
+    if (!owner) return
+    const fetchLogos = async () => {
+      try {
+        const res = await fetch(`https://explorer.arc.io/api/v2/addresses/${owner}/token-balances`)
+        if (!res.ok) return
+        const data = await res.json()
+        const newLogos: Record<string, string | null> = {}
+        for (const item of data) {
+          if (item.token && item.token.address_hash) {
+             newLogos[item.token.address_hash.toLowerCase()] = item.token.icon_url || null
+          }
+        }
+        setLogos(newLogos)
+      } catch (e) {
+        console.error("Failed to fetch logos", e)
+      }
+    }
+    fetchLogos()
+  }, [owner])
+
   const tokens = useMemo<WalletToken[]>(() => {
     const data = query.data
     if (!data) return []
@@ -87,10 +109,11 @@ export function useTokenList(permit2: Address | undefined) {
         balance: BigInt(balance.result),
         allowance: BigInt(allowance.result),
         isCustom: c.isCustom,
+        logo: logos[c.address.toLowerCase()] || null, // Adiciona o logo encontrado
       })
     })
     return rows
-  }, [query.data, candidates])
+  }, [query.data, candidates, logos])
 
   const addCustom = useCallback((address: Address) => {
     setCustom((prev) => {
