@@ -1,0 +1,282 @@
+/*
+ * Hagane hero banner. Every rule is scoped under .hagane-hero so nothing leaks into the rest of the app.
+ * Rules marked "added" fill classes the supplied CSS did not define (mountains, water, river line, lights, ripples,
+ * caption) and the mobile layout. Replace them with your own if you have them.
+ */
+
+.hagane-hero {
+  --moss: #6f9c86;
+  --red: #e04a3f;
+  --sky: #52e3d8;
+
+  position: relative;
+  /* Stacked: the landscape banner first, then the text, then the token list below the whole section. */
+  padding: 24px 0 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.hagane-hero .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 10px 'DM Mono', monospace;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--moss);
+}
+.hagane-hero .eyebrow:before {
+  content: '';
+  height: 1px;
+  width: 25px;
+  background: var(--red);
+}
+
+.hagane-hero h1 {
+  font: 500 clamp(38px, 6vw, 68px) / 1.12 'Noto Serif JP', serif;
+  letter-spacing: -2px;
+  margin: 17px 0 16px;
+}
+.hagane-hero h1 em {
+  font-style: normal;
+  color: var(--sky);
+}
+
+.hagane-hero p {
+  max-width: 425px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #9aa7a0;
+  margin: 0;
+}
+
+.hagane-hero .river-art {
+  width: 100%;
+  height: 250px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #13252d 0%, #1a3338 48%, #263d32 49%, #15271f 100%);
+  border: 1px solid #344d47;
+  isolation: isolate;
+}
+.hagane-hero .river-art:before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0.16;
+  background-image: radial-gradient(#a9dce9 0.6px, transparent 0.6px);
+  background-size: 9px 9px;
+}
+
+.hagane-hero .river-sun {
+  position: absolute;
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  right: 22%;
+  top: 28px;
+  background: #e7665b;
+}
+
+/* ---- added: the pieces the supplied CSS did not define ---- */
+
+.hagane-hero .river-sun,
+.hagane-hero .river-cloud,
+.hagane-hero .river-mountain,
+.hagane-hero .river-water,
+.hagane-hero .river-path,
+.hagane-hero .river-light,
+.hagane-hero .river-ripple {
+  pointer-events: none;
+}
+
+.hagane-hero .river-sun {
+  z-index: 1;
+  box-shadow: 0 0 40px rgba(231, 102, 91, 0.45);
+}
+
+.hagane-hero .river-cloud {
+  position: absolute;
+  z-index: 2;
+  left: 12%;
+  top: 58px;
+  width: 38%;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(190, 220, 226, 0.14);
+  filter: blur(5px);
+}
+
+.hagane-hero .river-mountain {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+.hagane-hero .rm-back {
+  z-index: 2;
+  bottom: 51%;
+  height: 42%;
+  background: #24494b;
+  clip-path: polygon(0 100%, 12% 55%, 24% 75%, 40% 22%, 58% 70%, 72% 38%, 88% 72%, 100% 50%, 100% 100%);
+}
+.hagane-hero .rm-mid {
+  z-index: 3;
+  bottom: 51%;
+  height: 33%;
+  background: #1a3a3e;
+  clip-path: polygon(0 100%, 8% 62%, 22% 82%, 36% 45%, 52% 80%, 66% 52%, 82% 85%, 100% 58%, 100% 100%);
+}
+.hagane-hero .rm-front {
+  z-index: 3;
+  bottom: 50%;
+  height: 22%;
+  background: #112a2c;
+  clip-path: polygon(0 100%, 10% 70%, 26% 90%, 44% 55%, 60% 88%, 78% 62%, 92% 85%, 100% 70%, 100% 100%);
+}
+
+.hagane-hero .river-water {
+  position: absolute;
+  z-index: 3;
+  left: 24%;
+  right: 24%;
+  bottom: 0;
+  height: 34%;
+  background: radial-gradient(ellipse at 50% 100%, rgba(82, 227, 216, 0.4), transparent 70%);
+}
+
+.hagane-hero .river-path {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.hagane-hero .river-path path {
+  fill: none;
+  stroke: #66e0d8;
+  stroke-width: 3;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 5px rgba(82, 227, 216, 0.85));
+}
+.hagane-hero .river-path path.river-glint {
+  stroke: #e6fffc;
+  stroke-width: 1.2;
+  stroke-dasharray: 6 22;
+  filter: none;
+  animation: hagane-glint 5s linear infinite;
+}
+
+.hagane-hero .river-light {
+  position: absolute;
+  z-index: 6;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #f6d38b;
+  box-shadow: 0 0 8px 2px rgba(246, 211, 139, 0.6);
+  animation: hagane-twinkle 3.6s ease-in-out infinite;
+}
+.hagane-hero .light-one {
+  left: 22%;
+  bottom: 26%;
+}
+.hagane-hero .light-two {
+  left: 72%;
+  bottom: 31%;
+  animation-delay: 1.2s;
+}
+.hagane-hero .light-three {
+  left: 58%;
+  bottom: 12%;
+  animation-delay: 2.1s;
+}
+
+.hagane-hero .river-ripple {
+  position: absolute;
+  z-index: 4;
+  border: 1px solid rgba(160, 238, 232, 0.5);
+  border-radius: 50%;
+  animation: hagane-ripple 4s ease-out infinite;
+}
+.hagane-hero .ripple-one {
+  left: 41%;
+  bottom: 6%;
+  width: 78px;
+  height: 14px;
+}
+.hagane-hero .ripple-two {
+  left: 47%;
+  bottom: 16%;
+  width: 46px;
+  height: 9px;
+  animation-delay: 1.6s;
+}
+
+.hagane-hero .river-caption {
+  position: absolute;
+  z-index: 7;
+  left: 16px;
+  bottom: 14px;
+  padding-left: 30px; /* keeps the text where it was after the red dash (22px wide + 8px gap) was removed */
+  display: flex;
+  align-items: center;
+  font: 9px 'DM Mono', monospace;
+  letter-spacing: 2px;
+  white-space: pre;
+  color: rgba(214, 235, 231, 0.75);
+}
+@keyframes hagane-glint {
+  to {
+    stroke-dashoffset: -112;
+  }
+}
+@keyframes hagane-twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes hagane-ripple {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+}
+
+/* Mobile: stack the text above the art. */
+@media (min-width: 900px) {
+  .hagane-hero .river-art {
+    height: 300px; /* the banner spans the whole container on desktop, so it gets a little more height */
+  }
+}
+
+@media (max-width: 899px) {
+  .hagane-hero {
+    gap: 24px;
+    padding: 16px 0 24px;
+  }
+  .hagane-hero h1 {
+    letter-spacing: -1px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hagane-hero .river-glint,
+  .hagane-hero .river-light,
+  .hagane-hero .river-ripple {
+    animation: none;
+  }
+}

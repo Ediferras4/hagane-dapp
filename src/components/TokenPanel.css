@@ -1,0 +1,244 @@
+/*
+ * Hagane token panel. Every rule is scoped under .hagane-tokens so nothing leaks into the rest of the app.
+ *
+ * The container itself takes the Review panel's classes (border border-vein bg-transparent), and everything inside uses
+ * the same global palette variables, so both panels share one surface, one border and one set of text colors.
+ */
+
+.hagane-tokens {
+  --hg-line: rgb(var(--c-vein)); /* panel border: same as the Review panel */
+  --hg-divider: rgb(var(--c-vein) / 0.7); /* inner dividers: same as the Review panel's lists */
+  --hg-text: rgb(var(--c-mist));
+  --hg-muted: rgb(var(--c-fog));
+  --hg-accent: rgb(var(--c-cyan));
+  --hg-selected: rgb(var(--c-pine) / 0.7);
+}
+
+/* Panel container: background and border come from the Tailwind classes shared with the Review panel. */
+.hagane-tokens.panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-height: min(620px, 80dvh); /* the panel never grows past this; only the token rows scroll */
+  overflow: hidden;
+}
+.hagane-tokens .sub-panel,
+.hagane-tokens .token-banner,
+.hagane-tokens .asset-foot {
+  flex: none;
+}
+
+/* Top summary */
+.hagane-tokens .sub-panel {
+  margin: 12px 12px 12px 12px;
+  background: transparent;
+  border: 1px solid var(--hg-divider);
+  padding: 10px 14px;
+  position: relative;
+}
+.hagane-tokens .panel-top-layout {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.hagane-tokens .panel-action-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+.hagane-tokens .panel-circle-label {
+  font: 7px 'DM Mono', monospace;
+  color: var(--hg-muted);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+.hagane-tokens .panel-circle-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--hg-divider);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hg-muted);
+  cursor: pointer;
+  padding: 0;
+  transition: border-color 0.15s;
+}
+.hagane-tokens .panel-circle-btn:hover:not(:disabled) {
+  border-color: var(--hg-muted);
+}
+.hagane-tokens .panel-circle-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.hagane-tokens .scan-anim-icon {
+  font-size: 17px;
+  color: var(--hg-muted);
+}
+.hagane-tokens .live-countdown-val {
+  font: 500 10px 'DM Mono', monospace;
+  color: var(--hg-accent);
+}
+.hagane-tokens .panel-center-info {
+  text-align: center;
+  flex: 1;
+  padding: 0 6px;
+}
+.hagane-tokens .panel-main-kicker {
+  font: 7px 'DM Mono', monospace;
+  color: var(--hg-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.hagane-tokens .panel-main-amount {
+  font: 500 21px 'DM Mono', monospace;
+  letter-spacing: 0.02em;
+  color: var(--hg-text);
+  margin: 1px 0;
+}
+.hagane-tokens .panel-main-count {
+  font: 8px 'DM Mono', monospace;
+  letter-spacing: 0.06em;
+  color: var(--hg-muted);
+}
+.hagane-tokens .panel-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding-top: 6px;
+  border-top: 1px solid var(--hg-divider);
+}
+.hagane-tokens .panel-stat-label {
+  font: 7px 'DM Mono', monospace;
+  color: var(--hg-muted);
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+.hagane-tokens .panel-stat-value {
+  font: 500 13px 'DM Mono', monospace;
+  letter-spacing: 0.04em;
+  color: var(--hg-text);
+  margin-top: 2px;
+}
+
+/* Token list and rows */
+.hagane-tokens .token-scroll {
+  flex: 1 1 auto;
+  min-height: 0; /* lets the flex child shrink so its own overflow scrolls instead of spilling out */
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  background: transparent;
+  border-top: 1px solid var(--hg-divider);
+  margin: 0;
+  /* A visible, distinct bar: a track plus a clear thumb, inside the panel's right edge. */
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--c-fog) / 0.55) rgb(var(--c-mist) / 0.06);
+}
+.hagane-tokens .token-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.hagane-tokens .token-scroll::-webkit-scrollbar-track {
+  background: rgb(var(--c-mist) / 0.06);
+}
+.hagane-tokens .token-scroll::-webkit-scrollbar-thumb {
+  background: rgb(var(--c-fog) / 0.55);
+  border-radius: 8px;
+}
+.hagane-tokens .token-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--c-fog) / 0.75);
+}
+/* Rows float on the panel: no divider lines, a soft highlight on hover, a clearer one when selected */
+.hagane-tokens .token-row {
+  position: relative;
+  margin: 0 8px;
+  border: 0; /* rows never carry divider lines */
+  border-radius: 8px;
+  background: transparent;
+  transition: background-color 0.15s;
+}
+.hagane-tokens .token-row:hover {
+  background: rgb(var(--c-mist) / 0.04);
+}
+.hagane-tokens .token-row.is-selected {
+  background: var(--hg-selected);
+}
+.hagane-tokens .token-scroll > ul {
+  padding: 6px 0;
+}
+
+/* Footer sits on the panel surface, separated from the list by one hairline */
+.hagane-tokens .asset-foot {
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.06em;
+  border-top: 1px solid var(--hg-divider);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 22px;
+  background: transparent;
+  font-size: 11px;
+  color: var(--hg-muted);
+}
+.hagane-tokens .asset-foot > div {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.hagane-tokens .text-btn {
+  border: 0;
+  background: transparent;
+  color: var(--hg-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 0;
+  min-height: 32px;
+}
+.hagane-tokens .text-btn.active {
+  color: var(--hg-accent);
+}
+.hagane-tokens .text-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.hagane-tokens .text-btn:not(:disabled):hover {
+  filter: brightness(1.2);
+}
+.hagane-tokens .panel-circle-btn:focus-visible,
+.hagane-tokens .text-btn:focus-visible {
+  outline: 2px solid var(--hg-accent);
+  outline-offset: 3px;
+}
+
+/* Scan icon spins while data is being refreshed. */
+.hagane-tokens .scan-anim-icon.is-scanning {
+  display: inline-block;
+  color: var(--hg-accent);
+  animation: hagane-scan-spin 1.1s linear infinite;
+}
+@keyframes hagane-scan-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 480px) {
+  .hagane-tokens .asset-foot {
+    padding: 10px 16px 12px;
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hagane-tokens .scan-anim-icon.is-scanning {
+    animation: none;
+  }
+}

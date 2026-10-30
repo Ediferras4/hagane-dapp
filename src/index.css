@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+/* Hagane palette: the single source of truth. Tailwind (tailwind.config.js) and component CSS both read these. */
+:root {
+  --c-sumi: 4 9 7;
+  --c-moss: 8 18 15;
+  --c-pine: 12 28 23;
+  --c-vein: 23 50 41;
+  --c-mist: 217 232 227;
+  --c-fog: 134 161 152;
+  --c-lichen: 111 156 134;
+  --c-cyan: 82 227 216;
+  --c-cyan-dim: 42 143 136;
+  --c-seal: 224 74 63;
+  --c-seal-dim: 140 43 37;
+  --c-warn: 255 138 61;
+  --c-bg: 16 22 20; /* page background, #101614 */
+  --c-dot: 155 185 156; /* background dots, #9bb99c */
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font-family: 'DM Sans', sans-serif;
+  color: rgb(var(--c-mist));
+  background-color: rgb(var(--c-bg));
+  /* Tiny dots, 8px apart, at 15% opacity. Fixed so the pattern covers the whole viewport while scrolling. */
+  background-image: radial-gradient(rgb(var(--c-dot) / 0.15) 1px, transparent 1px);
+  background-size: 8px 8px;
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgb(var(--c-cyan) / 0.28);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.hairline {
+  border: 1px solid rgb(var(--c-vein));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
