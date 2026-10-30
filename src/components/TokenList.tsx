@@ -18,14 +18,12 @@ interface Props {
   quotes: Map<string, Quote>
   eligibility: Map<string, Eligibility>
   canSuggest: boolean
-  /** All tokens are checked and none is eligible. */
   noEligible: boolean
   onSuggest: () => void
   onClear: () => void
   onToggle: (token: WalletToken) => void
   onRemoveCustom: (address: Address) => void
   locked: boolean
-  /** Values in USDC (6 decimals), undefined while unknown or when no wallet is connected. */
   summary: {
     othersValue: bigint | undefined
     tokenCount: number
@@ -133,7 +131,6 @@ export function TokenList(props: Props) {
         </div>
       )}
 
-      {/* The only scrollable area: token rows. The summary above and the footer below stay put. */}
       <div className="token-scroll">
         {!isConnected && (
           <p className="py-12 text-center text-sm text-fog">Connect your wallet to see your tokens.</p>
@@ -143,7 +140,7 @@ export function TokenList(props: Props) {
 
         {isConnected && !isLoading && isError && (
           <p role="alert" className="py-12 text-center text-sm text-seal">
-            Could not read your balances from Arc Testnet. Retrying shortly.
+            Could not read your balances from Arc Mainnet. Retrying shortly.
           </p>
         )}
 
@@ -191,14 +188,21 @@ export function TokenList(props: Props) {
                       >
                         {checked && <Check className="size-2.5 text-[#9bdcf4]" strokeWidth={3} />}
                       </span>
+                      
+                      {/* AQUI ESTÁ A MUDANÇA: A lógica para mostrar a foto em vez da letra */}
                       <span
                         aria-hidden
-                        className={`flex size-9 shrink-0 items-center justify-center rounded-full border border-vein bg-sumi font-display text-sm text-mist ${
+                        className={`flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-vein bg-sumi font-display text-sm text-mist ${
                           !eligible && !checked ? 'opacity-50' : ''
                         }`}
                       >
-                        {t.symbol.slice(0, 1).toUpperCase()}
+                        {t.logo ? (
+                          <img src={t.logo} alt={t.symbol} className="h-full w-full object-cover" />
+                        ) : (
+                          t.symbol.slice(0, 1).toUpperCase()
+                        )}
                       </span>
+
                       <span className="min-w-0">
                         <span
                           className={`flex min-h-6 items-center gap-2 font-sans text-[15px] font-medium leading-6 ${
@@ -265,4 +269,4 @@ export function TokenList(props: Props) {
 
     </section>
   )
-}
+        }
