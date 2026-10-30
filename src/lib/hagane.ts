@@ -16,15 +16,13 @@ function envAddress(value: unknown): Address | undefined {
   return typeof value === 'string' && isAddress(value) ? value : undefined
 }
 
-/** The deployed HaganeBatchSwap contract (public value, set in .env). */
 export const BATCH_SWAP_ADDRESS = "0xA5b4acd6B870fdE5db1ac5220799ccB1Efa410b0" as Address
 
-/** Arc Mainnet tokens offered by default. Users can add any other ERC-20 by address. */
 export const BASE_TOKENS: Address[] = [
-  envAddress(import.meta.env.VITE_EURC_ADDRESS),
-  envAddress(import.meta.env.VITE_WETH_ADDRESS),
-  envAddress(import.meta.env.VITE_CIRBTC_ADDRESS),
-].filter((a): a is Address => a !== undefined)
+  "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a", // EURC
+  "0x0000000000000000000000000000000000000000", // WETH (placeholder)
+  "0x171A4217b86A807A64eB94757Db6849fb4bDbAA0", // cirBTC
+]
 
 export const batchSwapAbi = parseAbi([
   'function batchSwap(address[] tokens, uint256[] amounts, uint256 minUsdcOut, uint256 permitNonce, uint256 deadline, bytes signature) returns (uint256 usdcOut)',
@@ -47,21 +45,13 @@ export const routerAbi = parseAbi([
 ])
 
 export const factoryAbi = parseAbi(['function getPair(address tokenA, address tokenB) view returns (address pair)'])
-
 export const pairAbi = parseAbi([
   'function getReserves() view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)',
   'function token0() view returns (address)',
 ])
 
-/** A token whose USDC pool holds less than $1,000 is "suspect". */
 export const SUSPECT_LIQUIDITY_USDC = 1_000_000_000n
-
-/** Gas estimates, from measured batches (about 90k per token on mock pools; padded for real V2 pairs). */
-export const GAS = {
-  BASE: 100_000n,
-  PER_TOKEN: 130_000n,
-  PER_ALLOWANCE: 60_000n,
-} as const
+export const GAS = { BASE: 100_000n, PER_TOKEN: 130_000n, PER_ALLOWANCE: 60_000n } as const
 
 export const permit2Types = {
   PermitBatchTransferFrom: [
@@ -82,7 +72,6 @@ export function shortAddress(addr: string): string {
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`
 }
 
-/** Permit2 nonces are unordered bitmaps: a random 256-bit value is unused with overwhelming probability. */
 export function randomPermitNonce(): bigint {
   const bytes = new Uint8Array(32)
   crypto.getRandomValues(bytes)
@@ -94,30 +83,13 @@ export function randomPermitNonce(): bigint {
 export function friendlyError(error: unknown): { cancelled: boolean; message: string } {
   const raw = error instanceof Error ? error.message : typeof error === 'string' ? error : ''
   const lower = raw.toLowerCase()
-
-  if (lower.includes('user rejected') || lower.includes('user denied') || lower.includes('rejected the request')) {
-    return { cancelled: true, message: 'Cancelled in wallet.' }
-  }
-  if (raw.includes('SlippageExceeded')) {
-    return { cancelled: false, message: 'The price moved and you would receive less than your minimum. Raise slippage or try again.' }
-  }
-  if (raw.includes('Expired')) {
-    return { cancelled: false, message: 'The signed permit expired. Start the swap again.' }
-  }
-  if (raw.includes('InvalidSigner') || raw.includes('InvalidNonce')) {
-    return { cancelled: false, message: 'The signature was rejected by Permit2. Start the swap again.' }
-  }
-  if (raw.includes('TRANSFER_FROM_FAILED') || lower.includes('insufficient allowance')) {
-    return { cancelled: false, message: 'Permit2 cannot move one of the tokens. Check your balance and allowance.' }
-  }
-  if (lower.includes('insufficient funds') || lower.includes('exceeds balance')) {
-    return { cancelled: false, message: 'Not enough USDC for gas.' }
-  }
-  if (lower.includes('network') || lower.includes('timeout') || lower.includes('fetch')) {
-    return { cancelled: false, message: 'Network issue. Check your connection and retry.' }
-  }
-  if (lower.includes('revert')) {
-    return { cancelled: false, message: 'The transaction reverted. A token may have no liquidity route to USDC.' }
-  }
+  if (lower.includes('user rejected') || lower.includes('user denied') || lower.includes('rejected the request')) return { cancelled: true, message: 'Cancelled in wallet.' }
+  if (raw.includes('SlippageExceeded')) return { cancelled: false, message: 'The price moved and you would receive less than your minimum. Raise slippage or try again.' }
+  if (raw.includes('Expired')) return { cancelled: false, message: 'The signed permit expired. Start the swap again.' }
+  if (raw.includes('InvalidSigner') || raw.includes('InvalidNonce')) return { cancelled: false, message: 'The signature was rejected by Permit2. Start the swap again.' }
+  if (raw.includes('TRANSFER_FROM_FAILED') || lower.includes('insufficient allowance')) return { cancelled: false, message: 'Permit2 cannot move one of the tokens. Check your balance and allowance.' }
+  if (lower.includes('insufficient funds') || lower.includes('exceeds balance')) return { cancelled: false, message: 'Not enough USDC for gas.' }
+  if (lower.includes('network') || lower.includes('timeout') || lower.includes('fetch')) return { cancelled: false, message: 'Network issue. Check your connection and retry.' }
+  if (lower.includes('revert')) return { cancelled: false, message: 'The transaction reverted. A token may have no liquidity route to USDC.' }
   return { cancelled: false, message: 'Something went wrong. Please try again.' }
-  }
+}
