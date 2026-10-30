@@ -1,13 +1,13 @@
 import { isAddress, parseAbi, type Address } from 'viem'
-import { arcTestnet } from 'viem/chains'
+import { arc } from 'viem/chains'
 import { getUsdc } from '@/onchain-facts'
 
-export const CHAIN = arcTestnet
+export const CHAIN = arc
 export const MAX_TOKENS = 10
 
-const usdcFact = getUsdc(arcTestnet.id)
+const usdcFact = getUsdc(arc.id)
 if (!usdcFact) {
-  throw new Error('USDC is not registered for Arc Testnet')
+  throw new Error('USDC is not registered for Arc Mainnet')
 }
 export const USDC_ADDRESS = usdcFact.address as Address
 export const USDC_DECIMALS = usdcFact.decimals
@@ -17,9 +17,9 @@ function envAddress(value: unknown): Address | undefined {
 }
 
 /** The deployed HaganeBatchSwap contract (public value, set in .env). */
-export const BATCH_SWAP_ADDRESS = "0xc49536a97B8F75Bf534116E0528ded2941d73D31" as Address
+export const BATCH_SWAP_ADDRESS = "0xA5b4acd6B870fdE5db1ac5220799ccB1Efa410b0" as Address
 
-/** Arc Testnet tokens offered by default. Users can add any other ERC-20 by address. */
+/** Arc Mainnet tokens offered by default. Users can add any other ERC-20 by address. */
 export const BASE_TOKENS: Address[] = [
   envAddress(import.meta.env.VITE_EURC_ADDRESS),
   envAddress(import.meta.env.VITE_WETH_ADDRESS),
@@ -111,7 +111,7 @@ export function friendlyError(error: unknown): { cancelled: boolean; message: st
     return { cancelled: false, message: 'Permit2 cannot move one of the tokens. Check your balance and allowance.' }
   }
   if (lower.includes('insufficient funds') || lower.includes('exceeds balance')) {
-    return { cancelled: false, message: 'Not enough USDC for gas. Use Get test USDC in the sidebar.' }
+    return { cancelled: false, message: 'Not enough USDC for gas.' }
   }
   if (lower.includes('network') || lower.includes('timeout') || lower.includes('fetch')) {
     return { cancelled: false, message: 'Network issue. Check your connection and retry.' }
@@ -120,4 +120,4 @@ export function friendlyError(error: unknown): { cancelled: boolean; message: st
     return { cancelled: false, message: 'The transaction reverted. A token may have no liquidity route to USDC.' }
   }
   return { cancelled: false, message: 'Something went wrong. Please try again.' }
-}
+  }
