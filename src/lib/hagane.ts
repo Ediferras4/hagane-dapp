@@ -17,7 +17,7 @@ function envAddress(value: unknown): Address | undefined {
 }
 
 /** The deployed HaganeBatchSwap contract (public value, set in .env). */
-export const BATCH_SWAP_ADDRESS = envAddress(import.meta.env.VITE_HAGANE_BATCH_SWAP_ADDRESS)
+export const BATCH_SWAP_ADDRESS = "0xc49536a97B8F75Bf534116E0528ded2941d73D31" as Address
 
 /** Arc Testnet tokens offered by default. Users can add any other ERC-20 by address. */
 export const BASE_TOKENS: Address[] = [
