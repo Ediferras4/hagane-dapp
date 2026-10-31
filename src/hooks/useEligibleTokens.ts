@@ -1,10 +1,9 @@
 import { useMemo } from 'react'
 import type { Address } from 'viem'
-import { useReadContracts } from 'wagmi'
 import { useQuotes, type QuoteInput } from '@/hooks/useQuotes'
 import type { WalletToken } from '@/hooks/useTokenList'
 import { byValueDesc, evaluateEligibility, type Eligibility } from '@/lib/eligibility'
-import { GAS, routerAbi, USDC_ADDRESS } from '@/lib/hagane'
+import { GAS } from '@/lib/hagane'
 
 interface Params {
   router: Address | undefined
@@ -15,8 +14,6 @@ interface Params {
 
 export function useEligibleTokens({ router, tokens, slippageBps, gasToUsdc }: Params) {
   const held = useMemo(() => tokens.filter((t) => t.balance > 0n), [tokens])
-  const heldAddresses = useMemo(() => held.map((t) => t.address), [held])
-  
   const holdingInputs = useMemo<QuoteInput[]>(
     () => held.map((t) => ({ token: t.address, amount: t.balance })),
     [held],
@@ -24,32 +21,15 @@ export function useEligibleTokens({ router, tokens, slippageBps, gasToUsdc }: Pa
 
   const { quotes } = useQuotes(router, holdingInputs)
 
-  const liquidityChecks = useMemo(() => {
-    if (!router) return []
-    return held.map((token) => ({
-      address: router,
-      abi: routerAbi,
-      functionName: 'getAmountsOut',
-      args: [token.balance, [token.address, USDC_ADDRESS]],
-      chainId: 5042, 
-    }))
-  }, [router, held])
-
-  const { data: liquidityData } = useReadContracts({
-    contracts: liquidityChecks,
-    query: { enabled: !!router && held.length > 0 },
-  })
-
+  // Ignoramos a checagem de liquidez via getAmountsOut porque o Router V2 está vazio.
+  // O contrato V4 vai calcular o valor real na hora da transação.
   const pools = useMemo(() => {
     const map = new Map<string, { liquidity: bigint } | undefined>()
-    if (!liquidityData) return map
-    held.forEach((token, index) => {
-      const result = liquidityData[index]
-      const hasLiquidity = result?.status === 'success' && result.result && result.result[0] > 0n
-      map.set(token.address.toLowerCase(), hasLiquidity ? { liquidity: 10_000_000_000n } : undefined)
+    held.forEach((token) => {
+      map.set(token.address.toLowerCase(), { liquidity: 10_000_000_000n })
     })
     return map
-  }, [liquidityData, held])
+  }, [held])
 
   const eligibility = useMemo(() => {
     const map = new Map<string, Eligibility>()
