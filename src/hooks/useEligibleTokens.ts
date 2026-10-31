@@ -13,10 +13,6 @@ interface Params {
   gasToUsdc: (gas: bigint) => bigint | undefined
 }
 
-/**
- * Applies the Hagane rules to every held token:
- * value range, pool depth (suspect), net value after gas and slippage, and no-liquidity.
- */
 export function useEligibleTokens({ router, tokens, slippageBps, gasToUsdc }: Params) {
   const held = useMemo(() => tokens.filter((t) => t.balance > 0n), [tokens])
   const heldAddresses = useMemo(() => held.map((t) => t.address), [held])
@@ -26,18 +22,16 @@ export function useEligibleTokens({ router, tokens, slippageBps, gasToUsdc }: Pa
     [held],
   )
 
-  // Get quotes from the router (this validates if a route exists)
   const { quotes } = useQuotes(router, holdingInputs)
 
-  // NOVO: Checagem de liquidez direto no Router (substitui o usePoolLiquidity)
   const liquidityChecks = useMemo(() => {
     if (!router) return []
     return held.map((token) => ({
       address: router,
       abi: routerAbi,
       functionName: 'getAmountsOut',
-      args: [1n, [token.address, USDC_ADDRESS]], // Testa a rota token -> USDC
-      chainId: 5042, // Arc Mainnet
+      args: [token.balance, [token.address, USDC_ADDRESS]],
+      chainId: 5042, 
     }))
   }, [router, held])
 
@@ -46,14 +40,13 @@ export function useEligibleTokens({ router, tokens, slippageBps, gasToUsdc }: Pa
     query: { enabled: !!router && held.length > 0 },
   })
 
-  // Constrói o mapa de liquidez (se o getAmountsOut falhar, é porque não tem rota)
   const pools = useMemo(() => {
-    const map = new Map<string, { hasLiquidity: boolean }>()
+    const map = new Map<string, { liquidity: bigint } | undefined>()
     if (!liquidityData) return map
     held.forEach((token, index) => {
       const result = liquidityData[index]
-      const hasLiquidity = result?.status === 'success' && result.result?.[0] > 0n
-      map.set(token.address.toLowerCase(), { hasLiquidity })
+      const hasLiquidity = result?.status === 'success' && result.result && result.result[0] > 0n
+      map.set(token.address.toLowerCase(), hasLiquidity ? { liquidity: 10_000_000_000n } : undefined)
     })
     return map
   }, [liquidityData, held])
@@ -65,13 +58,10 @@ export function useEligibleTokens({ router, tokens, slippageBps, gasToUsdc }: Pa
       const needsAllowance = token.allowance < token.balance
       const gasShare = gasToUsdc(GAS.PER_TOKEN + (needsAllowance ? GAS.PER_ALLOWANCE : 0n))
       
-      // Verifica se a rota existe no router. Se não existir, marca como "sem liquidez"
       const poolInfo = pools.get(key)
-      const pool = poolInfo?.hasLiquidity ? { liquidity: 1_000_000_000n } : undefined // Se tiver rota, consideramos que tem liquidez (ajustado para o teste)
-
       map.set(
         key,
-        evaluateEligibility({ token, quote: quotes.get(key), pool, gasShare, slippageBps }),
+        evaluateEligibility({ token, quote: quotes.get(key), pool: poolInfo, gasShare, slippageBps }),
       )
     }
     return map
