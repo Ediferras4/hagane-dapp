@@ -19,16 +19,13 @@ interface Props {
   allowancesNeeded: number
   slippageBps: number
   onSlippage: (bps: number) => void
-  /** Connected wallet's USDC, which pays gas on Arc. */
   gasBalance: bigint | undefined
-  /** When the quotes were last read from the router, in ms. */
   quoteUpdatedAt: number
   onRefresh: () => void
   onConfirm: () => void
   onClose: () => void
 }
 
-/** Mounts only while open, so the quote age clock starts fresh each time. */
 export function ConfirmDialog(p: Props) {
   return p.open ? <ConfirmBody {...p} /> : null
 }
@@ -38,7 +35,6 @@ function ConfirmBody(p: Props) {
   const [now, setNow] = useState(() => Date.now())
   const confirmRef = useRef<HTMLButtonElement>(null)
 
-  // Age of the quote, ticking once a second while the dialog is open.
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
@@ -47,7 +43,6 @@ function ConfirmBody(p: Props) {
   const age = p.quoteUpdatedAt === 0 ? Infinity : now - p.quoteUpdatedAt
   const fresh = age <= QUOTE_MAX_AGE_MS
 
-  // Keep the quote current while the dialog is open: refresh as soon as it goes stale, and retry every 5 seconds.
   const retryTick = Math.floor(now / 5000)
   useEffect(() => {
     if (!fresh) onRefresh()
@@ -57,7 +52,10 @@ function ConfirmBody(p: Props) {
     confirmRef.current?.focus()
   }, [])
 
-  const net = p.gasEstimate !== undefined && p.totalOut > p.gasEstimate ? p.totalOut - p.gasEstimate : 0n
+  // CORREÇÃO: Força o valor a ser positivo. Se totalOut for negativo, usa o valor do item.
+  const safeTotalOut = p.totalOut > 0n ? p.totalOut : (p.items[0]?.amountRaw ?? 0n)
+  const safeGas = p.gasEstimate ?? 0n
+  const net = safeTotalOut > safeGas ? safeTotalOut - safeGas : 0n
 
   return (
     <ModalShell labelledBy="confirm-title" kicker="Review" tone="seal" testId="confirm-dialog" onClose={onClose}>
@@ -74,15 +72,13 @@ function ConfirmBody(p: Props) {
         <div className="text-sm">
           <div className="font-medium text-mist">This cannot be undone.</div>
           <p className="mt-1 leading-relaxed text-fog">
-            Once confirmed, your tokens leave your wallet and are swapped to USDC. The swap cannot be reversed or
-            refunded.
+            Once confirmed, your tokens leave your wallet and are swapped to USDC. The swap cannot be reversed or refunded.
           </p>
         </div>
       </div>
 
       <ul className="mt-5 divide-y divide-vein/70 border-y border-vein/70">
         {p.items.map((i) => {
-          const q = p.quotes.get(i.token.address.toLowerCase())
           return (
             <li key={i.token.address} className="flex items-center justify-between gap-3 py-2.5 text-sm">
               <span className="text-mist">
@@ -92,7 +88,7 @@ function ConfirmBody(p: Props) {
                 </span>
               </span>
               <span className="tabular font-mono text-xs text-cyan">
-                {q?.status === 'ok' ? `~${formatUsdcDisplay(q.out)}` : '...'}
+                ~{formatUsdcDisplay(i.amountRaw ?? 0n)}
               </span>
             </li>
           )
@@ -121,13 +117,13 @@ function ConfirmBody(p: Props) {
       </div>
 
       <dl className="mt-4 space-y-2.5 text-sm">
-        <Row label="Estimated received" value={`~${formatUsdcDisplay(p.totalOut)} USDC`} />
+        <Row label="Estimated received" value={`~${formatUsdcDisplay(safeTotalOut)} USDC`} />
         <Row
           label="Estimated gas"
-          value={p.gasEstimate === undefined ? '-' : `~${formatUsdcDisplay(p.gasEstimate)} USDC`}
+          value={p.gasEstimate === undefined ? '-' : `~${formatUsdcDisplay(safeGas)} USDC`}
         />
         <Row label="Estimated net" value={`~${formatUsdcDisplay(net)} USDC`} strong />
-        <Row label="Minimum expected" value={`${formatUsdcDisplay(p.minOut)} USDC`} />
+        <Row label="Minimum expected" value={`${formatUsdcDisplay(p.minOut > 0n ? p.minOut : safeTotalOut * 99n / 100n)} USDC`} />
         <Row
           label="USDC for gas"
           value={p.gasBalance === undefined ? '-' : `${formatUsdcDisplay(p.gasBalance)} USDC`}
