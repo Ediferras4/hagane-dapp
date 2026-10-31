@@ -19,9 +19,9 @@ function envAddress(value: unknown): Address | undefined {
 export const BATCH_SWAP_ADDRESS = "0xA5b4acd6B870fdE5db1ac5220799ccB1Efa410b0" as Address
 
 export const BASE_TOKENS: Address[] = [
-  "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a", // EURC
-  "0x0000000000000000000000000000000000000000", // WETH (placeholder)
-  "0x171A4217b86A807A64eB94757Db6849fb4bDbAA0", // cirBTC
+  "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1", // EURC (Mainnet)
+  "0x171A4217b86A807A64eB94757Db6849fb4bDbAA0", // cirBTC (Mainnet)
+  "0x128cC466B61f542da60c70e3aA11c10e19B84EDB", // WETH (Mainnet)
 ]
 
 export const batchSwapAbi = parseAbi([
