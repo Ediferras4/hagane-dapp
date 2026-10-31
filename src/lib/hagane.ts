@@ -16,8 +16,8 @@ function envAddress(value: unknown): Address | undefined {
   return typeof value === 'string' && isAddress(value) ? value : undefined
 }
 
-// CONTRATO V2 QUE JÁ ESTÁ NA MAINNET
-export const BATCH_SWAP_ADDRESS = "0xA5b4acd6B870fdE5db1ac5220799ccB1Efa410b0" as Address
+// CONTRATO V4 DEPLOYADO NA MAINNET
+export const BATCH_SWAP_ADDRESS = "0xe87A02893c4a1e65D6d35fc708577A1eFFAe13F2" as Address
 
 export const BASE_TOKENS: Address[] = [
   "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1", // EURC (Mainnet)
@@ -95,4 +95,4 @@ export function friendlyError(error: unknown): { cancelled: boolean; message: st
   if (lower.includes('network') || lower.includes('timeout') || lower.includes('fetch')) return { cancelled: false, message: 'Network issue. Check your connection and retry.' }
   if (lower.includes('revert')) return { cancelled: false, message: 'The transaction reverted. A token may have no liquidity route to USDC.' }
   return { cancelled: false, message: 'Something went wrong. Please try again.' }
-                                                                                                                          }
+  }
