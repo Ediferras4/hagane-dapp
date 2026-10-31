@@ -50,7 +50,9 @@ export const pairAbi = parseAbi([
   'function token0() view returns (address)',
 ])
 
-export const SUSPECT_LIQUIDITY_USDC = 1_000_000_000n
+/** LIQUIDEZ MUDADA PARA O TESTE: 0.10 USDC em vez de 1.000 USDC */
+export const SUSPECT_LIQUIDITY_USDC = 100_000n 
+
 export const GAS = { BASE: 100_000n, PER_TOKEN: 130_000n, PER_ALLOWANCE: 60_000n } as const
 
 export const permit2Types = {
@@ -92,4 +94,4 @@ export function friendlyError(error: unknown): { cancelled: boolean; message: st
   if (lower.includes('network') || lower.includes('timeout') || lower.includes('fetch')) return { cancelled: false, message: 'Network issue. Check your connection and retry.' }
   if (lower.includes('revert')) return { cancelled: false, message: 'The transaction reverted. A token may have no liquidity route to USDC.' }
   return { cancelled: false, message: 'Something went wrong. Please try again.' }
-}
+                                                                                                 }
