@@ -196,7 +196,7 @@ export function SideDrawer({ open, onClose }: Props) {
                 <span aria-hidden className="size-2 shrink-0 rounded-full bg-emerald-400" />
                 <div className="leading-tight">
                   <div className="text-sm font-medium text-mist">Arc Network</div>
-                  <div className="text-xs text-fog">Testnet interface</div>
+                  <div className="text-xs text-fog">Mainnet interface</div>
                 </div>
               </div>
 
