@@ -18,32 +18,24 @@ export interface TokenOutcome {
   token: Address
   symbol: string
   decimals: number
-  /** Amount the batch tried to convert. */
   requested: bigint
-  /** Amount that actually left the wallet. */
   converted: bigint
   ok: boolean
-  /** Why it failed. Failed tokens stay in the wallet. */
   reason?: string
 }
 
 export interface SwapResult {
   outcome: 'success' | 'partial' | 'failed'
-  /** Swap transaction, when one was sent. */
   hash?: Hex
-  /** USDC actually received, from the BatchSwapped event. */
   usdcOut?: bigint
-  /** Gas paid across every transaction of this flow, in USDC (6 decimals). */
   gasSpent: bigint
   tokens: TokenOutcome[]
-  /** Set when nothing was converted. */
   reason?: string
 }
 
 export interface FlowState {
   status: FlowStatus
   step: FlowStep | null
-  /** Human-readable line for the current step. */
   detail: string
   allowDone: number
   allowTotal: number
@@ -57,7 +49,6 @@ export interface SwapItem {
   decimals: number
   amount: bigint
   allowance: bigint
-  /** Wallet balance before the swap, used to measure what really left the wallet. */
   balance: bigint
 }
 
@@ -65,7 +56,7 @@ export interface RunParams {
   account: Address
   permit2: Address
   items: SwapItem[]
-  minUsdcOut: bigint
+  minOuts: bigint[] // Atualizado para suportar o array de mínimos do Contrato V5
 }
 
 const IDLE: FlowState = { status: 'idle', step: null, detail: '', allowDone: 0, allowTotal: 0 }
@@ -74,7 +65,6 @@ function gasToUsdc(wei: bigint): bigint {
   return gasTokenToUsdc(CHAIN.id, Amount.fromRaw(wei, gasTokenDecimalsFor(CHAIN.id)), 'trunc').raw
 }
 
-/** Drives allowances, the Permit2 signature, the batchSwap call and the result, from real wallet and receipt state. */
 export function useBatchSwap(onSettled: () => void) {
   const publicClient = usePublicClient({ chainId: CHAIN.id })
   const { writeContractAsync } = useWriteContract()
@@ -88,7 +78,7 @@ export function useBatchSwap(onSettled: () => void) {
   }, [])
 
   const run = useCallback(
-    async ({ account, permit2, items, minUsdcOut }: RunParams) => {
+    async ({ account, permit2, items, minOuts }: RunParams) => {
       const batch = BATCH_SWAP_ADDRESS
       if (!publicClient || !batch) return
       setNotice(null)
@@ -176,11 +166,20 @@ export function useBatchSwap(onSettled: () => void) {
           step,
           detail: 'Confirm the swap transaction in your wallet',
         })
+        
+        // Chamada adaptada para o batchSwap do Contrato V5 (com minOuts[])
         swapHash = await writeContractAsync({
           address: batch,
           abi: batchSwapAbi,
           functionName: 'batchSwap',
-          args: [items.map((it) => it.token), items.map((it) => it.amount), minUsdcOut, nonce, deadline, signature],
+          args: [
+            items.map((it) => it.token),
+            items.map((it) => it.amount),
+            minOuts,
+            nonce,
+            deadline,
+            signature,
+          ],
           chainId: CHAIN.id,
         })
 
@@ -213,7 +212,6 @@ export function useBatchSwap(onSettled: () => void) {
         const logs = parseEventLogs({ abi: batchSwapAbi, logs: receipt.logs, eventName: 'BatchSwapped' })
         const usdcOut = logs.find((l) => l.address.toLowerCase() === batch.toLowerCase())?.args.usdcOut
 
-        // What really left the wallet decides which tokens converted and which stayed.
         let after: bigint[] | undefined
         try {
           after = await Promise.all(
@@ -265,7 +263,6 @@ export function useBatchSwap(onSettled: () => void) {
       } catch (error) {
         const { cancelled, message } = friendlyError(error)
         if (cancelled) {
-          // Cancelling in the wallet returns to the list; the selection is untouched.
           setState(IDLE)
           setNotice(message)
         } else {
@@ -288,3 +285,4 @@ export function useBatchSwap(onSettled: () => void) {
 
   return { state, notice, run, reset }
 }
+
