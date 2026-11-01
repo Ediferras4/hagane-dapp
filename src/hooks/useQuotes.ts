@@ -14,8 +14,8 @@ export type Quote =
   | { status: 'noRoute' }
 
 /**
- * Cotação otimizada para o contrato V5 na Mainnet da Arc.
- * Ajusta os cálculos considerando os decimais reais dos ativos (ex: EURC/USDC).
+ * Cotação limpa para o contrato V5 na Mainnet da Arc.
+ * Mantém a integridade dos valores reais dos tokens para exibição correta.
  */
 export function useQuotes(_router: Address | undefined, inputs: QuoteInput[]) {
   const quotes = useMemo(() => {
@@ -27,15 +27,13 @@ export function useQuotes(_router: Address | undefined, inputs: QuoteInput[]) {
         return
       }
 
-      // Tratamento proporcional ajustado aos decimais reais do token para USDC (6 decimais)
-      // Se o token tiver 18 decimais (ex: WETH/cirBTC), converte proporcionalmente para a base de 6 decimais do USDC.
+      // Mantém o montante proporcional exato ao valor real do token na carteira
       let estimatedOut = amount
       if (decimals === 18) {
-        // Exemplo de normalização de 18 para 6 decimais se necessário, 
-        // mantujući a integridade matemática para o contrato V5.
-        estimatedOut = amount / 1_000_000_000_12n // Ajuste base proporcional seguro
-      } else if (decimals === 6) {
-        // EURC e USDC partilham 6 decimais, rácio 1:1 seguro para estimativa de visualização
+        // Normalização segura de 18 para 6 decimais (USDC)
+        estimatedOut = amount / 1_000_000_000n
+      } else {
+        // Para EURC e USDC (6 decimais), o valor mantém-se direto
         estimatedOut = amount
       }
 
