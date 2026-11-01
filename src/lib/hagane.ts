@@ -16,8 +16,8 @@ function envAddress(value: unknown): Address | undefined {
   return typeof value === 'string' && isAddress(value) ? value : undefined
 }
 
-// CONTRATO V4 DEPLOYADO NA MAINNET
-export const BATCH_SWAP_ADDRESS = "0xe87A02893c4a1e65D6d35fc708577A1eFFAe13F2" as Address
+// CONTRATO V5 DEPLOYADO NA MAINNET (Corrigido)
+export const BATCH_SWAP_ADDRESS = "0x52e13F07aA08EEC78751F7fd2bA7171BF1e720FC" as Address
 
 export const BASE_TOKENS: Address[] = [
   "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1", // EURC (Mainnet)
@@ -26,7 +26,7 @@ export const BASE_TOKENS: Address[] = [
 ]
 
 export const batchSwapAbi = parseAbi([
-  'function batchSwap(address[] tokens, uint256[] amounts, uint256 minUsdcOut, uint256 permitNonce, uint256 deadline, bytes signature) returns (uint256 usdcOut)',
+  'function batchSwap(address[] tokens, uint256[] amounts, uint256[] minOuts, uint256 permitNonce, uint256 deadline, bytes signature) returns (uint256 usdcOut)',
   'function router() view returns (address)',
   'function PERMIT2() view returns (address)',
   'event BatchSwapped(address indexed user, uint256 tokenCount, uint256 usdcOut)',
@@ -41,17 +41,9 @@ export const batchSwapAbi = parseAbi([
 ])
 
 export const routerAbi = parseAbi([
-  'function getAmountsOut(uint256 amountIn, address[] path) view returns (uint256[] amounts)',
-  'function factory() view returns (address)',
+  'function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) params) external payable returns (uint256 amountOut)',
 ])
 
-export const factoryAbi = parseAbi(['function getPair(address tokenA, address tokenB) view returns (address pair)'])
-export const pairAbi = parseAbi([
-  'function getReserves() view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)',
-  'function token0() view returns (address)',
-])
-
-/** LIQUIDEZ MUDADA PARA O TESTE: 0.10 USDC em vez de 1.000 USDC */
 export const SUSPECT_LIQUIDITY_USDC = 100_000n 
 
 export const GAS = { BASE: 100_000n, PER_TOKEN: 130_000n, PER_ALLOWANCE: 60_000n } as const
@@ -95,4 +87,4 @@ export function friendlyError(error: unknown): { cancelled: boolean; message: st
   if (lower.includes('network') || lower.includes('timeout') || lower.includes('fetch')) return { cancelled: false, message: 'Network issue. Check your connection and retry.' }
   if (lower.includes('revert')) return { cancelled: false, message: 'The transaction reverted. A token may have no liquidity route to USDC.' }
   return { cancelled: false, message: 'Something went wrong. Please try again.' }
-  }
+}
