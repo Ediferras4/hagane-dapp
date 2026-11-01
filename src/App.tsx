@@ -64,7 +64,6 @@ export default function App() {
     gasToUsdc,
   })
 
-  // Display only: tokens the wallet does not hold are not listed. Eligibility is still evaluated for every token above.
   const visibleTokens = useMemo(() => sortedTokens.filter((t) => t.balance > 0n), [sortedTokens])
 
   const items = useMemo<SelectedItem[]>(
@@ -74,7 +73,7 @@ export default function App() {
           const key = t.address.toLowerCase()
           return key in selection && !isIneligible(eligibility.get(key))
         })
-        .map((t) => parseItem(t, toInputValue(t.balance, t.decimals))), // always the whole balance
+        .map((t) => parseItem(t, toInputValue(t.balance, t.decimals))),
     [list.tokens, selection, eligibility],
   )
   const selectedMap = useMemo(() => new Map(items.map((i) => [i.token.address.toLowerCase(), i])), [items])
@@ -96,7 +95,15 @@ export default function App() {
     for (const q of quotes.values()) if (q.status === 'ok') sum += q.out
     return sum
   }, [quotes])
-  const minOut = (totalOut * BigInt(10_000 - slippageBps)) / 10_000n
+  
+  // Cálculo de mínimos por token adaptado para o contrato V5 (minOuts array)
+  const minOuts = useMemo(() => {
+    return items.map((i) => {
+      const q = quotes.get(i.token.address.toLowerCase())
+      const out = q && q.status === 'ok' ? q.out : (i.amountRaw ?? 0n)
+      return (out * BigInt(10_000 - slippageBps)) / 10_000n
+    })
+  }, [items, quotes, slippageBps])
 
   const allowancesNeeded = items.filter((i) => i.amountRaw !== undefined && i.token.allowance < i.amountRaw).length
 
@@ -120,7 +127,6 @@ export default function App() {
   const locked = flow.state.status === 'waiting' || flow.state.status === 'processing'
   const showingResult = flow.state.status === 'success' || flow.state.status === 'error'
 
-  // Live data: scan and the countdown both refresh balances, quotes, pools and the gas price.
   const queryClient = useQueryClient()
   const refreshAll = useCallback(() => {
     void queryClient.invalidateQueries()
@@ -132,7 +138,6 @@ export default function App() {
   )
   const scanning = useIsFetching() > 0
 
-  // Summary: estimated value of the other tokens (router quotes; tokens without a route have no price).
   const summary = useMemo(() => {
     let others = 0n
     for (const e of eligibility.values()) {
@@ -147,7 +152,6 @@ export default function App() {
     }
   }, [eligibility, list.tokens, isConnected, address, usdcBalance])
 
-  // A selected token whose price moved out of range (or whose balance is gone) is deselected with a warning.
   const outOfRange = useMemo(() => {
     const out: { key: string; message?: string }[] = []
     for (const key of Object.keys(selection)) {
@@ -182,7 +186,6 @@ export default function App() {
     }
   }
 
-  // Leaving Arc pauses everything: the confirmation closes and the selection is kept.
   const [wasWrongChain, setWasWrongChain] = useState(false)
   if (wrongChain !== wasWrongChain) {
     setWasWrongChain(wrongChain)
@@ -204,7 +207,6 @@ export default function App() {
 
   const clearSelection = () => setSelection({})
 
-  /** Selects the highest-value eligible tokens, up to the batch limit, each at its full balance. */
   const suggest = () => {
     setSelection(
       Object.fromEntries(
@@ -226,7 +228,7 @@ export default function App() {
     void flow.run({
       account: address,
       permit2: cfg.permit2,
-      minUsdcOut: minOut,
+      minOuts: minOuts, // Alinhado com a assinatura do contrato V5
       items: items.map((i) => ({
         token: i.token.address,
         symbol: i.token.symbol,
@@ -238,7 +240,6 @@ export default function App() {
     })
   }
 
-  // Back from the result screen: converted tokens leave the selection, failed ones stay selected for another try.
   const finishResult = () => {
     const failed = new Set(flow.state.result?.tokens.filter((t) => !t.ok).map((t) => t.token.toLowerCase()))
     setSelection((prev) => Object.fromEntries(Object.entries(prev).filter(([k]) => failed.has(k))))
@@ -337,7 +338,7 @@ export default function App() {
         items={items}
         quotes={quotes}
         totalOut={totalOut}
-        minOut={minOut}
+        minOut={minOuts.reduce((a, b) => a + b, 0n)}
         gasEstimate={gasEstimate}
         allowancesNeeded={allowancesNeeded}
         slippageBps={slippageBps}
